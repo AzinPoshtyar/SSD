@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 
 from ssd.structures.container import Container
-
+from pycocotools.coco import COCO
 
 class COCODataset(torch.utils.data.Dataset):
     class_names = ('__background__',
@@ -25,7 +25,7 @@ class COCODataset(torch.utils.data.Dataset):
                    'teddy bear', 'hair drier', 'toothbrush')
 
     def __init__(self, data_dir, ann_file, transform=None, target_transform=None, remove_empty=False):
-        from pycocotools.coco import COCO
+        #from pycocotools.coco import COCO
         self.coco = COCO(ann_file)
         self.data_dir = data_dir
         self.transform = transform
