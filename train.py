@@ -16,6 +16,8 @@ from ssd.utils.checkpoint import CheckPointer
 from ssd.utils.dist_util import synchronize
 from ssd.utils.logger import setup_logger
 from ssd.utils.misc import str2bool
+from torch.optim import lr_scheduler
+import ipdb
 
 
 def train(cfg, args):
@@ -30,7 +32,13 @@ def train(cfg, args):
     optimizer = make_optimizer(cfg, model, lr)
 
     milestones = [step // args.num_gpus for step in cfg.SOLVER.LR_STEPS]
-    scheduler = make_lr_scheduler(cfg, optimizer, milestones)
+    if args.scheduler == 'cosine':
+        scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=cfg.SOLVER.MAX_ITER, eta_min=0.026666)
+    elif args.scheduler == 'cosine_warmup':
+        scheduler = lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=cfg.SOLVER.MAX_ITER/50, eta_min=0.026666)
+    else:
+        scheduler = make_lr_scheduler(cfg, optimizer, milestones)
+
 
     arguments = {"iteration": 0}
     save_to_disk = dist_util.get_rank() == 0
@@ -59,6 +67,7 @@ def main():
     parser.add_argument('--save_step', default=2500, type=int, help='Save checkpoint every save_step')
     parser.add_argument('--eval_step', default=2500, type=int, help='Evaluate dataset every eval_step, disabled when eval_step < 0')
     parser.add_argument('--use_tensorboard', default=True, type=str2bool)
+    parser.add_argument('--scheduler', default=None, type=str, choices=['cosine', 'cosine_warmup'])
     parser.add_argument(
         "--skip-test",
         dest="skip_test",
